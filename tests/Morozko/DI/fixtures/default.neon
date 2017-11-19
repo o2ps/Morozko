@@ -1,0 +1,7 @@
+extensions:
+	morozko: Oops\Morozko\DI\MorozkoExtension
+	console: Kdyby\Console\DI\ConsoleExtension
+
+
+services:
+	- OopsTests\Morozko\SuccessfulCacheWarmer
