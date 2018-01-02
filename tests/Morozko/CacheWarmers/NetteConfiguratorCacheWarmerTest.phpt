@@ -7,7 +7,6 @@ namespace OopsTests\Morozko\CacheWarmers;
 use Oops\Morozko\CacheWarmers\NetteConfiguratorCacheWarmer;
 use Oops\Morozko\CacheWarmupFailedException;
 use Tester\Assert;
-use Tester\Environment;
 use Tester\TestCase;
 
 
@@ -25,7 +24,8 @@ final class NetteConfiguratorCacheWarmerTest extends TestCase
 
 	public function testSuccessfulWwwDir(): void
 	{
-		Environment::lock(self::LOCK, \dirname(\TEMP_DIR));
+		$lockFile = \dirname(\TEMP_DIR) . '/lock-' . self::LOCK;
+		\flock($lock = \fopen($lockFile, 'w'), \LOCK_EX);
 
 		@\unlink(__DIR__ . '/fixtures/successfulWwwDir/hit'); // @ - file may not exist
 		Assert::false(\file_exists(__DIR__ . '/fixtures/successfulWwwDir/hit'));
@@ -35,17 +35,22 @@ final class NetteConfiguratorCacheWarmerTest extends TestCase
 
 		Assert::true(\file_exists(__DIR__ . '/fixtures/successfulWwwDir/hit'));
 		Assert::same('hit!', \file_get_contents(__DIR__ . '/fixtures/successfulWwwDir/hit'));
+
+		\flock($lock, \LOCK_UN);
 	}
 
 
 	public function testFailingWwwDir(): void
 	{
-		Environment::lock(self::LOCK, \dirname(\TEMP_DIR));
+		$lockFile = \dirname(\TEMP_DIR) . '/lock-' . self::LOCK;
+		\flock($lock = \fopen($lockFile, 'w'), \LOCK_EX);
 
 		$cacheWarmer = new NetteConfiguratorCacheWarmer(__DIR__ . '/fixtures/failingWwwDir');
 		Assert::throws(function () use ($cacheWarmer): void {
 			$cacheWarmer->warmup();
 		}, CacheWarmupFailedException::class, '');
+
+		\flock($lock, \LOCK_UN);
 	}
 
 }
