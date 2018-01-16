@@ -72,7 +72,17 @@ final class NetteConfiguratorCacheWarmer implements CacheWarmer
 			$webServer->start();
 
 			// wait for the server to start listening
+			$start = \microtime(TRUE);
 			do {
+				if (\microtime(TRUE) - $start > 5) {
+					throw new CacheWarmupFailedException(
+						\sprintf(
+							'Waiting for PHP web-server to listen on %d timed out after 5 seconds, giving up.',
+							$port
+						)
+					);
+				}
+
 				\usleep(200 * 1000); // 200 ms
 				$socket = @\fsockopen('127.0.0.1', $port);
 			} while ($socket === FALSE);
