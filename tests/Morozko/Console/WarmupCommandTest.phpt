@@ -7,10 +7,12 @@ namespace OopsTests\Morozko\Console;
 use Oops\Morozko\Configuration;
 use Oops\Morozko\Console\WarmupCommand;
 use OopsTests\Morozko\FailingCacheWarmer;
+use OopsTests\Morozko\LoggingCacheWarmer;
 use OopsTests\Morozko\SuccessfulCacheWarmer;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Tester\Assert;
@@ -79,6 +81,23 @@ final class WarmupCommandTest extends TestCase
 		$exitCode = $this->runCommand($collection, $input, $output);
 		Assert::same(1, $exitCode);
 		Assert::same(FailingCacheWarmer::class . " failed: Cache warmup failed!\n", $output->fetch());
+	}
+
+
+	public function testLogger(): void
+	{
+		$collection = new Configuration();
+		$cacheWarmer = new LoggingCacheWarmer();
+		$collection->addCacheWarmer($cacheWarmer);
+
+		$input = new ArrayInput(['oops:morozko:warmup']);
+		$output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL, FALSE);
+
+		$exitCode = $this->runCommand($collection, $input, $output);
+		Assert::same(0, $exitCode);
+		Assert::same('', $output->fetch());
+
+		Assert::type(ConsoleLogger::class, $cacheWarmer->getLogger());
 	}
 
 

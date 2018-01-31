@@ -6,9 +6,11 @@ namespace Oops\Morozko\Console;
 
 use Oops\Morozko\Configuration;
 use Oops\Morozko\CacheWarmupFailedException;
+use Psr\Log\LoggerAwareInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 
 
@@ -43,7 +45,13 @@ final class WarmupCommand extends Command
 		$strict = $input->getOption(self::OPTION_STRICT);
 		$exitCode = 0;
 
+		$logger = new ConsoleLogger($output);
+
 		foreach ($this->configuration->getCacheWarmers() as $cacheWarmer) {
+			if ($cacheWarmer instanceof LoggerAwareInterface) {
+				$cacheWarmer->setLogger($logger);
+			}
+
 			try {
 				$cacheWarmer->warmup();
 				if ($output->isVerbose()) {
