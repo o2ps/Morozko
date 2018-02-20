@@ -77,12 +77,13 @@ final class NetteConfiguratorCacheWarmer implements CacheWarmer, LoggerAwareInte
 		$this->logger->debug(\sprintf('PHP executable found at %s.', $phpExecutable));
 
 		try {
-			$webServer = new Process(\sprintf(
-				'%s -S 127.0.0.1:%d -t %s',
+			$webServer = new Process([
 				$phpExecutable,
-				$port,
-				\escapeshellarg($this->wwwDir)
-			));
+				'-S',
+				\sprintf('127.0.0.1:%d', $port),
+				'-t',
+				$this->wwwDir,
+			], $this->wwwDir);
 
 			$this->logger->info(\sprintf('Starting PHP web-server process on port %d.', $port));
 			$webServer->start();
