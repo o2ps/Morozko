@@ -4,8 +4,10 @@ declare(strict_types = 1);
 
 namespace Oops\Morozko\DI;
 
+use Nette\DI\Compiler;
 use Nette\DI\CompilerExtension;
 use Oops\Morozko\CacheWarmer;
+use Oops\Morozko\CacheWarmers\NetteConfiguratorCacheWarmer\ConfiguratorFactoryInterface;
 use Oops\Morozko\CacheWarmers\NetteConfiguratorCacheWarmer;
 use Oops\Morozko\Configuration;
 use Oops\Morozko\Console\WarmupCommand;
@@ -16,7 +18,7 @@ final class MorozkoExtension extends CompilerExtension
 {
 
 	private $defaults = [
-		'di' => TRUE,
+		'configuratorFactory' => NULL,
 	];
 
 
@@ -37,13 +39,19 @@ final class MorozkoExtension extends CompilerExtension
 
 
 		// DI container cache warmer
-		if ($config['di']) {
-			$wwwDir = $builder->parameters['wwwDir'];
-			$builder->addDefinition($this->prefix('warmers.di'))
-				->setType(NetteConfiguratorCacheWarmer::class)
-				->setFactory(NetteConfiguratorCacheWarmer::class, [$wwwDir])
-				->setAutowired(FALSE);
+		if (empty($config['configuratorFactory'])) {
+			throw ConfigurationException::missingConfiguratorFactory($this->name);
 		}
+
+		$configuratorFactoryServiceName = $this->prefix('configuratorFactory');
+		$configuratorFactoryDefinition = $config['configuratorFactory'];
+		Compiler::loadDefinitions($builder, [$configuratorFactoryServiceName => $configuratorFactoryDefinition]);
+		$builder->getDefinition($configuratorFactoryServiceName)->setType(ConfiguratorFactoryInterface::class);
+
+		$builder->addDefinition($this->prefix('warmers.di'))
+			->setType(NetteConfiguratorCacheWarmer::class)
+			->setFactory(NetteConfiguratorCacheWarmer::class, ['@' . $configuratorFactoryServiceName])
+			->setAutowired(FALSE);
 	}
 
 

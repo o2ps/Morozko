@@ -2,6 +2,8 @@ extensions:
 	morozko: Oops\Morozko\DI\MorozkoExtension
 	console: Kdyby\Console\DI\ConsoleExtension
 
+morozko:
+	configuratorFactory: OopsTests\Morozko\DI\FakeConfiguratorFactory
 
 services:
 	- OopsTests\Morozko\SuccessfulCacheWarmer

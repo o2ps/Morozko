@@ -8,6 +8,7 @@ use Nette\Configurator;
 use Nette\DI\Container;
 use Oops\Morozko\CacheWarmers\NetteConfiguratorCacheWarmer;
 use Oops\Morozko\Configuration;
+use Oops\Morozko\DI\ConfigurationException;
 use OopsTests\Morozko\SuccessfulCacheWarmer;
 use Symfony\Component\Console\Application;
 use Tester\Assert;
@@ -50,6 +51,18 @@ final class MorozkoExtensionTest extends TestCase
 		Assert::throws(function (): void {
 			$this->createContainer('missingConsole');
 		}, \LogicException::class, $expectedMessage);
+	}
+
+
+	public function testMissingConfiguratorFactory(): void
+	{
+		Assert::throws(
+			function (): void {
+				$this->createContainer('missingConfiguratorFactory');
+			},
+			ConfigurationException::class,
+			"Configuration option 'morozko.configuratorFactory' is missing."
+		);
 	}
 
 

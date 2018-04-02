@@ -19,7 +19,7 @@ $ composer require oops/morozko
 
 Oops/Morozko requires PHP >= 7.1.
 
-Oops/Morozko provides a Symfony/Console command, thus, **you must also install and configure a Symfony/Console integration package** like [Kdyby/Console](https://github.com/Kdyby/Console) or [contributte/console](https://github.com/contributte/console).
+Oops/Morozko provides a Symfony/Console command, thus, **you must also install and configure a Symfony/Console integration package** such as [Kdyby/Console](https://github.com/Kdyby/Console) or [contributte/console](https://github.com/contributte/console).
 
 
 ## Usage
@@ -37,15 +37,42 @@ Then you can directly run the `oops:morozko:warmup` command, or add it to your d
 
 ### Default cache warmers
 
-By default, the `oops:morozko:warmup` command executes one default cache warmer: the `NetteConfiguratorCacheWarmer`, which compiles the DI container. To be independent on the server configuration, it does so by running a PHP built-in web server and dispatching an HTTP request to it.
+By default, the `oops:morozko:warmup` command executes one default cache warmer: the `NetteConfiguratorCacheWarmer`, which compiles the DI container.
 
-The web server uses the `%wwwDir%` parameter as a document root. **Be aware that in CLI the `%wwwDir%` parameter might not actually point to the document root.** For example, if you run console commands via `bin/console.php`, it will likely point to the `bin` directory.
-If that is your case, you need to set the correct parameter's value in your `bootstrap.php`:
+To be able to do so, it needs to know how your DI container is configured - you need to provide it with an implementation of `ConfiguratorFactoryInterface` whose `create()` method should return the same `Configurator` as in your application's `bootstrap.php`. Actually, it might be wise to use the implementation in `bootstrap.php` to prevent code duplication.
+
+```php
+<?php
+namespace My\Application;
+
+use Nette\Configurator;
+use Oops\Morozko\CacheWarmers\NetteConfiguratorCacheWarmer\ConfiguratorFactoryInterface;
+
+final class ConfiguratorFactory implements ConfiguratorFactoryInterface
+{
+    public function create(): Configurator
+    {
+        $configurator = new Configurator();
+        // ... configure application ...
+        return $configurator;
+    }
+}
+```
+
+```yaml
+morozko:
+    configuratorFactory: My\Application\ConfiguratorFactory
+```
+
+
+**Be aware that in CLI the `%wwwDir%` and `%appDir%` parameters might not actually point to the document root.** For example, if you run console commands via `bin/console.php`, it will likely point to the `bin` directory.
+If that is your case, you need to set the parameters to the correct values in your configurator factory, otherwise the generated DI container won't match the one actually used in production:
 
 ```php
 <?php
 $configurator = new Nette\Configurator();
 $configurator->addParameters([
+    'appDir' => __DIR__,
     'wwwDir' => __DIR__ . '/../www',    
 ]);
 

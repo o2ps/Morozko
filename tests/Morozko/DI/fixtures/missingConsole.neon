@@ -1,2 +1,5 @@
 extensions:
 	morozko: Oops\Morozko\DI\MorozkoExtension
+
+morozko:
+	configuratorFactory: OopsTests\Morozko\DI\FakeConfiguratorFactory

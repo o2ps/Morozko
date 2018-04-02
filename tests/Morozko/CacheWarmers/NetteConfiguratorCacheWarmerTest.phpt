@@ -4,9 +4,10 @@ declare(strict_types = 1);
 
 namespace OopsTests\Morozko\CacheWarmers;
 
+use Nette\Configurator;
+use Oops\Morozko\CacheWarmers\NetteConfiguratorCacheWarmer\ConfiguratorFactoryInterface;
 use Oops\Morozko\CacheWarmers\NetteConfiguratorCacheWarmer;
-use Oops\Morozko\CacheWarmupFailedException;
-use Tester\Assert;
+use Tester\Environment;
 use Tester\TestCase;
 
 
@@ -19,38 +20,41 @@ require_once __DIR__ . '/../../bootstrap.php';
 final class NetteConfiguratorCacheWarmerTest extends TestCase
 {
 
-	private const LOCK = 'NetteConfiguratorCacheWarmerTest';
-
-
-	public function testSuccessfulWwwDir(): void
+	public function testCacheWarmer(): void
 	{
-		$lockFile = \dirname(\TEMP_DIR) . '/lock-' . self::LOCK;
-		\flock($lock = \fopen($lockFile, 'w'), \LOCK_EX);
+		$configuratorMock = \Mockery::mock(Configurator::class);
+		$configuratorMock->shouldReceive('addParameters')
+			->withArgs([[
+				'consoleMode' => FALSE,
+				'debugMode' => FALSE,
+				'productionMode' => TRUE,
+			]])
+			->once();
 
-		@\unlink(__DIR__ . '/fixtures/successfulWwwDir/hit'); // @ - file may not exist
-		Assert::false(\file_exists(__DIR__ . '/fixtures/successfulWwwDir/hit'));
+		$configuratorMock->shouldReceive('createContainer')
+			->withArgs([])
+			->once();
 
-		$cacheWarmer = new NetteConfiguratorCacheWarmer(__DIR__ . '/fixtures/successfulWwwDir');
+		$configuratorFactory = new class($configuratorMock) implements ConfiguratorFactoryInterface {
+			/** @var Configurator */
+			private $configurator;
+
+			public function __construct(Configurator $configurator)
+			{
+				$this->configurator = $configurator;
+			}
+
+			public function create(): Configurator
+			{
+				return $this->configurator;
+			}
+		};
+
+		$cacheWarmer = new NetteConfiguratorCacheWarmer($configuratorFactory);
 		$cacheWarmer->warmup();
 
-		Assert::true(\file_exists(__DIR__ . '/fixtures/successfulWwwDir/hit'));
-		Assert::same('hit!', \file_get_contents(__DIR__ . '/fixtures/successfulWwwDir/hit'));
-
-		\flock($lock, \LOCK_UN);
-	}
-
-
-	public function testFailingWwwDir(): void
-	{
-		$lockFile = \dirname(\TEMP_DIR) . '/lock-' . self::LOCK;
-		\flock($lock = \fopen($lockFile, 'w'), \LOCK_EX);
-
-		$cacheWarmer = new NetteConfiguratorCacheWarmer(__DIR__ . '/fixtures/failingWwwDir');
-		Assert::throws(function () use ($cacheWarmer): void {
-			$cacheWarmer->warmup();
-		}, CacheWarmupFailedException::class, '');
-
-		\flock($lock, \LOCK_UN);
+		Environment::$checkAssertions = FALSE;
+		\Mockery::close();
 	}
 
 }
