@@ -1,5 +1,7 @@
 # Oops/Morozko
 
+:warning: **THIS PACKAGE IS NO LONGER MAINTAINED.** You can use the AdvancedCache module from [contributte/console-extra](https://github.com/contributte/console-extra) instead.
+
 [![Build Status](https://img.shields.io/travis/o2ps/Morozko.svg)](https://travis-ci.org/o2ps/Morozko)
 [![Downloads this Month](https://img.shields.io/packagist/dm/oops/morozko.svg)](https://packagist.org/packages/oops/morozko)
 [![Latest stable](https://img.shields.io/packagist/v/oops/morozko.svg)](https://packagist.org/packages/oops/morozko)
